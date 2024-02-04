@@ -33,6 +33,7 @@ const mitma = "https://www.mitma.gob.es/informacion-para-el-ciudadano/empleo-pub
 
 
 async function init() {
+    contador = 0;
     let respuesta = await get_mitma();
         if(respuesta != "Error"){
         inicialLista = respuesta.indexOf("<ul class='listado_generico'>")+1; // -1
