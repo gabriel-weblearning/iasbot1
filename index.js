@@ -11,9 +11,7 @@ const app = express();
 
 app.get('/',(req,res)=>(res.send('Hello World2')));
 
-const port = process.env.PORT;
-
-app.listen(port,()=>{
+app.listen(process.env.PORT,()=>{
   console.log("Aplicación running en puerto: " + PORT);
 });
 
