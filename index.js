@@ -1,15 +1,20 @@
+require('dotenv').config();
+
+
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require("axios");
 
 
 const express = require('express');
+
 const app = express();
 
 app.get('/',(req,res)=>(res.send('Hello World2')));
 
-const port = 3000;
+const PORT = process.env.PORT;
+
 app.listen(port,()=>{
-  console.log(`Server running at http://localhost:${port}`);
+  console.log("Aplicación running en puerto: " + PORT);
 });
 
 
@@ -25,7 +30,7 @@ var lineas_timer = null;
 var user_timer = null;
 
 // replace the value below with the Telegram token you receive from @BotFather
-const token = "6569587603:AAFOO4Yt6Vkx7rvORsor-IQhv8m5Nh4Uc4k";
+const token = process.env.TOKEN;
 const mitma = "https://www.mitma.gob.es/informacion-para-el-ciudadano/empleo-publico/procesos-selectivos/convocatorias-2022/personal-funcionario-2022/cuerpo_de_ingenieros_aeronauticos";
 
 
