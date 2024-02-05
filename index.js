@@ -31,7 +31,7 @@ function setTimer()
             lineas = get_lineas(respuesta);
         }
         
-        if (lineas != init_lineas){
+        if (lineas != init_lineas && lineas > 0){
             clearInterval(timer);
             setTimer2(lineas);
             console.log("FIN");
