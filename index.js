@@ -49,7 +49,7 @@ function setTimer2(lineas)
 
         sumar();
 
-        if(contador<10)
+        if(contador<8)
         {
 
             for (let [key, value] of users) 
@@ -68,7 +68,7 @@ function setTimer2(lineas)
             setTimer();
         }
 
-        }, 3000);
+        }, 5000);
 
 
 }
