@@ -1,18 +1,27 @@
 require('dotenv').config();
 
+const nodemailer = require('nodemailer');
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require("axios");
+const express = require('express');
+const app = express();
 
-var activated = true;
+var tools = require('./tools');
+var moment = require('moment');
+
+var contador = 0;
+var inicialLista = 0;
+var finalLista = 0;
+var midRespuesta = 0;
+var init_lineas = 0;
+var lineas = 0;
 
 var users = new Map()
+var mails = new Map()
 
-var timer;
-var timer2;
+var timer = null;
+var timer2 = null;
 
-const express = require('express');
-
-const app = express();
 
 app.get('/',(req,res)=>(res.send('Hello World3')));
 
@@ -45,6 +54,19 @@ function setTimer2(lineas)
 {
     contador = 0;
 
+    try
+    {
+        for (let [key, value] of mails) 
+        {
+            enviarCorreo(key);
+        }
+        
+    }
+    catch(err)
+    {
+        console.log("Correo no enviado");              
+    }
+
     timer2 = setInterval(async function(){
 
         sumar();
@@ -59,7 +81,7 @@ function setTimer2(lineas)
                         deleteUser(key,value);
                     }               
                 });
-            }  
+            }
         }
         else
         {
@@ -69,23 +91,11 @@ function setTimer2(lineas)
         }
 
         }, 5000);
-
-
 }
-var respuesta ="";
-var filas=0;
-var contador = 0;
-var inicialLista = 0;
-var finalLista = 0;
-var midRespuesta = 0;
-var init_lineas = 0;
-var lineas = 0;
-var lineas_timer = null;
-var user_timer = null;
 
 // replace the value below with the Telegram token you receive from @BotFather
 const token = process.env.TOKEN;
-const mitma = "https://www.mitma.gob.es/informacion-para-el-ciudadano/empleo-publico/procesos-selectivos/convocatorias-2022/personal-funcionario-2022/cuerpo_de_ingenieros_aeronauticos";
+const mitma = process.env.WEB;
 
 
 async function init() {
@@ -115,69 +125,55 @@ async function get_mitma() {
 
 function get_lineas(respuesta){
 
-    if(respuesta != "Error"){
-        inicialLista = respuesta.indexOf("<ul class='listado_generico'>")+1; // -1
-        finalLista = respuesta.indexOf("</ul>",inicialLista)+1;
-        midRespuesta = respuesta.substring(inicialLista,finalLista+1);
-        lineas = midRespuesta.split('</li>').length-1;
-        return lineas;
+        if(respuesta != "Error"){
+            inicialLista = respuesta.indexOf("<ul class='listado_generico'>")+1; // -1
+            finalLista = respuesta.indexOf("</ul>",inicialLista)+1;
+            midRespuesta = respuesta.substring(inicialLista,finalLista+1);
+            lineas = midRespuesta.split('</li>').length-1;
+            return lineas;
+        }
+        else
+        {
+            return 0;
+        }
+
     }
-    else
-    {
-        return 0;
-    }
 
-}
+function enviarCorreo(destino){
 
-const bot = new TelegramBot(token, { polling: true});
+    if(destino != ""){
 
-bot.on("message",async(msg)=>{
+        let mailTransporter =
+        nodemailer.createTransport(
+            {
+                service: 'gmail',
+                auth: {
+                    user: process.env.FROMAIL,
+                    pass: process.env.PWDMAIL
+                }
+            }
+        );
     
-    const chatId= msg.chat.id;
-    const userInput = msg.text;
-    const name = msg.from.first_name;
+        let mailDetails = {
+            from: 'Gabriel',
+            to: destino,
+            subject: 'IAS - Página actualizada - ' + moment().format('DD/MM/YYYY HH:mm:ss'),
+            text: 'Página del cuerpo de IAS actualizada.' + "\n\r" + mitma
+        };
 
-    if(userInput == "/start")
-    {
-        login(chatId,name,0);
-    }
-    else if(userInput == "/status")
-    {
-        texto = "Actualmente en la página web hay " + lineas + " elementos."
-        bot.sendMessage(chatId,texto);
+
+        mailTransporter
+        .sendMail(mailDetails,
+            function (err, data) {
+                if (err) {
+                    console.log('Error Occurs');
+                } else {
+                    console.log('Email sent successfully');
+                }
+            });
 
     }
-    else if(userInput == "/login")
-    {
-        login(chatId,name,1);
-    }
-    else if(userInput == "/logout")
-    {
-        logout(chatId,name,1);
-    }
-    else if(userInput == "/users")
-    {
-        getusers(chatId);
-    }
-    else if(userInput == "/test")
-    {
-        init_lineas = 0;
-        bot.sendMessage(chatId,"A continuación todos los usuarios conectados recibirán una alerta.");
-    }
-    else if(userInput == "/addmail")
-    {
-        
-    }
-    else if(userInput == "/delmail")
-    {
-        
-    }
-    else if(userInput == "/listmail")
-    {
-        
-    }
-
-});
+}
 
 function login(nUser,name, from){
 
@@ -211,6 +207,36 @@ function logout(nUser,name){
     else
     {
         bot.sendMessage(nUser,"Ninguna acción llevada a cabo. Ya se encontraba no suscrit@a a las notificaciones.");
+    }
+}
+
+function addMail(nUser, chatId){
+    if(mails.has(nUser)==false){
+        mails.set(nUser,1);
+        console.log("Added mail " + nUser);
+        bot.sendMessage(chatId,"Añadido " + nUser);
+        return true;
+    }
+    else
+    {
+        console.log("Mail " + nUser + " already exists");
+        bot.sendMessage(chatId, nUser + " ya existe");
+        return false;
+    }
+}
+
+function deleteMail(nUser,chatId){
+    if(mails.has(nUser)==true){
+        mails.delete(nUser);
+        console.log("Deleted mail " + nUser);
+        bot.sendMessage(chatId,"Borrado " + nUser);
+        return true;
+    }
+    else
+    {
+        console.log("Mail " + nUser + " already deleted");
+        bot.sendMessage(chatId, nUser + " ya estaba borrado");
+        return false;
     }
 }
 
@@ -261,14 +287,117 @@ function getusers(nUser){
     }
 }
 
+function getMails()
+{
+    var texto4="";
+
+    for (let [key, value] of mails) 
+    {
+        if(texto4==""){
+            texto4 = key;
+        }
+        else
+        {
+            texto4 = texto4 + ";" + key;
+        }
+    }
+
+    return texto4;
+}
 
 function sumar()
 {
     contador = contador + 1;
 };
 
+const bot = new TelegramBot(token, { polling: true});
 
+bot.on("message",async(msg)=>{
+    
+    const chatId= msg.chat.id;
+    const userInput = msg.text;
+    const name = msg.from.first_name;
 
+    if(userInput == "/start")
+    {
+        login(chatId,name,0);
+    }
+    else if(userInput == "/status")
+    {
+        texto = "Actualmente en la página web hay " + lineas + " elementos."
+        bot.sendMessage(chatId,texto);
+    }
+    else if(userInput == "/login")
+    {
+        login(chatId,name,1);
+    }
+    else if(userInput == "/logout")
+    {
+        logout(chatId,name,1);
+    }
+    else if(userInput == "/users")
+    {
+        getusers(chatId);
+    }
+    else if(userInput == "/test")
+    {
+        init_lineas = 0;
+        bot.sendMessage(chatId,"A continuación todos los usuarios conectados recibirán una alerta.");
+    }
+    else if(userInput.startsWith("/addmail"))
+    {
+        var texto1 = (userInput.replace("/addmail","").replace(" ",""));
+        texto1 = texto1.split(";")
+        if(texto1.length>0){
+            for (let i = 0; i < texto1.length; i++) {
+                if(checkEmail(texto1[i])){
+                    addMail(texto1[i],chatId);
+                }
+              } 
+        }
+    }
+    else if(userInput.startsWith("/delmail"))
+    {
+        var texto2 = (userInput.replace("/delmail","").replace(" ",""));
+        texto2 = texto2.split(";")
+        if(texto2.length>0){
+            for (let i = 0; i < texto2.length; i++) {
+                if(checkEmail(texto2[i])){
+                    deleteMail(texto2[i],chatId);
+                }
+              } 
+        }
+    }
+    else if(userInput == "/listmails")
+    {
+        var texto3 = "Mails: " + "\n\r";
 
+        for (let [key, value] of mails) 
+        {
+            texto3 = texto3 + "\n\r" + key;
+        }
+        
+        bot.sendMessage(chatId,texto3);
 
-  init();
+    }
+    else if(userInput == "aa")
+    {
+        for (let [key, value] of mails) 
+        {
+            enviarCorreo(key);
+        }
+    }   
+
+});
+
+//check the email
+function checkEmail(str) {
+    var pattern = /\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/;
+    if (pattern.test(str)) {
+        return true;
+    } else {//from   ww  w  . jav  a2 s.  c  o m
+        return false;
+    }
+}
+
+init();
