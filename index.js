@@ -113,6 +113,7 @@ async function init() {
 async function get_mitma() {
     try
     {
+        console.log(mitma);
         const url = mitma;
         let response = await axios.get(url);
         //respuesta = response.data;
