@@ -97,7 +97,7 @@ function setTimer2(lineas)
 
 // replace the value below with the Telegram token you receive from @BotFather
 const token = process.env.TOKEN;
-const mitma = "https://www.mitma.gob.es/informacion-para-el-ciudadano/empleo-publico/procesos-selectivos/convocatorias-2022/personal-funcionario-2022/cuerpo_de_ingenieros_aeronauticos";
+const mitma = process.env.WEB;
 
 
 async function init() {
