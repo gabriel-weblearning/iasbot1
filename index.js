@@ -122,6 +122,7 @@ async function get_mitma() {
     catch(error)
     {
         console.log("Error");
+        console.log(error);
         return "Error";
     }
   }
