@@ -6,7 +6,6 @@ const axios = require("axios");
 const express = require('express');
 const app = express();
 
-var tools = require('./tools');
 var moment = require('moment');
 
 var contador = 0;
@@ -56,9 +55,12 @@ function setTimer2(lineas)
 
     try
     {
-        for (let [key, value] of mails) 
+        if(mails.size>0)
         {
-            enviarCorreo(key);
+            for (let [key, value] of mails) 
+            {
+                enviarCorreo(key);
+            }
         }
         
     }
@@ -211,6 +213,8 @@ function logout(nUser,name){
 }
 
 function addMail(nUser, chatId){
+
+
     if(mails.has(nUser)==false){
         mails.set(nUser,1);
         console.log("Added mail " + nUser);
@@ -226,6 +230,7 @@ function addMail(nUser, chatId){
 }
 
 function deleteMail(nUser,chatId){
+
     if(mails.has(nUser)==true){
         mails.delete(nUser);
         console.log("Deleted mail " + nUser);
@@ -242,6 +247,7 @@ function deleteMail(nUser,chatId){
 
 
 function addUser(nUser,name){
+
     if(users.has(nUser)==false){
         users.set(nUser,name);
         console.log("Added user " + nUser + " (" + name + ")");
@@ -255,6 +261,8 @@ function addUser(nUser,name){
 }
 
 function deleteUser(nUser,name){
+
+
     if(users.has(nUser)==true){
         users.delete(nUser);
         console.log("Deleted user " + nUser + " (" + name + ")");
@@ -287,23 +295,6 @@ function getusers(nUser){
     }
 }
 
-function getMails()
-{
-    var texto4="";
-
-    for (let [key, value] of mails) 
-    {
-        if(texto4==""){
-            texto4 = key;
-        }
-        else
-        {
-            texto4 = texto4 + ";" + key;
-        }
-    }
-
-    return texto4;
-}
 
 function sumar()
 {
@@ -377,16 +368,81 @@ bot.on("message",async(msg)=>{
             texto3 = texto3 + "\n\r" + key;
         }
         
-        bot.sendMessage(chatId,texto3);
+        if(mails.size>0)
+        {
+            bot.sendMessage(chatId,texto3);
+        }
+        else
+        {
+            bot.sendMessage(chatId,"No hay ninguna dirección almacenada");
+        }
 
     }
-    else if(userInput == "aa")
+    else if(userInput.startsWith("/include"))
     {
-        for (let [key, value] of mails) 
-        {
-            enviarCorreo(key);
+        var texto4 = (userInput.replace("/include","").replace(" ",""));
+        texto4 = texto4.split(";")
+        
+        if(texto4.length==2){
+
+            var nUser;
+
+            if(isNaN(texto4[0])==false){
+
+                nUser = parseInt(texto4[0]);
+
+                if(addUser(nUser,texto4[1]))
+                {
+                    bot.sendMessage(chatId,"Añadido " + nUser + " (" + texto4[1] + ")");
+                }
+                else
+                {
+                    bot.sendMessage(chatId, nUser + " (" + texto4[1] + ") ya existe");
+                }
+                
+            }
+            else
+            {
+                bot.sendMessage(chatId, texto4[0] + " no es una expresión numérica");
+            }
+            
         }
-    }   
+    }
+    else if(userInput.startsWith("/exclude"))
+    {
+        var texto5 = (userInput.replace("/exclude","").replace(" ",""));
+        texto5 = texto5.split(";")
+        if(texto5.length==1){
+
+            var nUser;
+
+            if(isNaN(texto5[0])==false){
+
+                nUser = parseInt(texto5[0]);
+
+                if(deleteUser(nUser))
+                {
+                    bot.sendMessage(chatId,"Borrado " + nUser);
+                }
+                else
+                {
+                    bot.sendMessage(chatId, nUser + " ya estaba borrado");
+                }
+            }
+            else
+            {
+                bot.sendMessage(chatId, texto5[0] + " no es una expresión numérica");
+            }
+        }
+
+    }
+    // else if(userInput == "aa")
+    // {
+    //     for (let [key, value] of mails) 
+    //     {
+    //         enviarCorreo(key);
+    //     }
+    // }   
 
 });
 
