@@ -21,6 +21,7 @@ var mails = new Map()
 var timer = null;
 var timer2 = null;
 
+var lastTime = "";
 
 app.get('/',(req,res)=>(res.send('Hello World3')));
 
@@ -37,6 +38,11 @@ function setTimer()
 
         if(respuesta != "Error"){
             lineas = get_lineas(respuesta);
+            lastTime = moment().format('DD/MM/YYYY HH:mm:ss').toString();
+        }
+        else
+        {
+            lastTime = "-"
         }
         
         if (lineas != init_lineas && lineas > 0){
@@ -106,6 +112,11 @@ async function init() {
         if(respuesta != "Error"){
             init_lineas = get_lineas(respuesta);
             lineas = init_lineas;
+            lastTime = moment().format('DD/MM/YYYY HH:mm:ss').toString();
+        }
+        else
+        {
+            lastTime ="-";
         }
     setTimer();
 }
@@ -316,7 +327,8 @@ bot.on("message",async(msg)=>{
     }
     else if(userInput == "/status")
     {
-        texto = "Actualmente en la página web hay " + lineas + " elementos."
+        texto = "Número de elementos: " + lineas;
+        texto = texto + "\n\r" + "Chequeado: " + lastTime;
         bot.sendMessage(chatId,texto);
     }
     else if(userInput == "/login")
